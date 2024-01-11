@@ -1,7 +1,6 @@
-from chain import Chain
 from workflow import Workflow
 from langchain.chat_models import ChatOpenAI
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 gptJsonModel = ChatOpenAI(
