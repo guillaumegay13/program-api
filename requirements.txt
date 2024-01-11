@@ -2,5 +2,3 @@ fastapi
 langchain
 pydantic
 uvicorn
-json
-time
