@@ -1,5 +1,5 @@
 fastapi
-langchain
+langchain==0.1.1
 pydantic
 uvicorn
 openai

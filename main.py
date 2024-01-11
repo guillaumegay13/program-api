@@ -1,5 +1,5 @@
 from workflow import Workflow
-from langchain_community.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
