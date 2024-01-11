@@ -2,6 +2,7 @@ from workflow import Workflow
 from langchain.chat_models import ChatOpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
+import uvicorn
 
 gptJsonModel = ChatOpenAI(
     #models : https://platform.openai.com/docs/models/gpt-3-5
@@ -33,7 +34,6 @@ async def create_program(input_data: ProgramInput):
     return result
 
 def main():
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":

@@ -3,3 +3,4 @@ langchain
 pydantic
 uvicorn
 openai
+uvicorn
