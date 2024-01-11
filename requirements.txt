@@ -1,6 +1,6 @@
-fastapi==0.109.0
-langchain==0.1.0
-pydantic==1.10.7
-uvicorn==0.25.0
+fastapi
+langchain
+pydantic
+uvicorn
 json
 time
