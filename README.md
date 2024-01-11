@@ -1,2 +1,2 @@
 # program-api
-Sports program generation API using LLM, FastAPI and deployed with Vercel
+Tailor-made sports program generation API using LLM, FastAPI and deployed with Vercel
