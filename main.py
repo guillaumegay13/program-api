@@ -33,6 +33,10 @@ async def create_program(input_data: ProgramInput):
     result = Workflow(gptJsonModel, input_data.dict())
     return result
 
+@app.get("/ping")
+def ping():
+    return "Hello!"
+
 def main():
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
