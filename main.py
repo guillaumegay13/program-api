@@ -1,0 +1,43 @@
+from chain import Chain
+from workflow import Workflow
+from langchain.chat_models import ChatOpenAI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+gptJsonModel = ChatOpenAI(
+    #models : https://platform.openai.com/docs/models/gpt-3-5
+    #model="gpt-4-1106-preview",
+    model="gpt-3.5-turbo-1106",
+    model_kwargs={
+        "response_format": {
+            "type": "json_object"
+        }
+    }
+)
+
+# Define a Pydantic model for the JSON data input
+class ProgramInput(BaseModel):
+    type: str
+    gender: str
+    level: str
+    frequency: int = None
+    goal: str
+    size: int
+    weight: int
+    age: int
+
+app = FastAPI()
+
+@app.post("/program/")
+async def create_program(input_data: ProgramInput):
+    # Assuming Workflow is a function or class you have defined
+    # which takes the GPT model and the input data
+    result = Workflow(gptJsonModel, input_data.dict())
+    return result
+
+def main():
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    main()
