@@ -29,8 +29,6 @@ app = FastAPI()
 
 @app.post("/program/")
 async def create_program(input_data: ProgramInput):
-    # Assuming Workflow is a function or class you have defined
-    # which takes the GPT model and the input data
     result = Workflow(gptJsonModel, input_data.dict())
     return result
 
