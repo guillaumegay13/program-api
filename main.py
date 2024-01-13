@@ -3,11 +3,13 @@ from langchain_community.chat_models import ChatOpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
+from mangum import Mangum
 
 gptJsonModel = ChatOpenAI(
     #models : https://platform.openai.com/docs/models/gpt-3-5
-    #model="gpt-4-1106-preview",
-    model="gpt-3.5-turbo-1106",
+    # trying GPT-4 turbo preview
+    model="gpt-4-1106-preview",
+    #model="gpt-3.5-turbo-1106",
     model_kwargs={
         "response_format": {
             "type": "json_object"
@@ -36,6 +38,8 @@ async def create_program(input_data: ProgramInput):
 @app.get("/ping")
 def ping():
     return "Hello!"
+
+lambda_handler = Mangum(app)
 
 def main():
     uvicorn.run(app, host="0.0.0.0", port=8000)
