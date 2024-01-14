@@ -15,7 +15,7 @@
       "APP_MODULE": "main:app"
     },
     "functions": {
-      "app/api/**/*": {
+      "app/*": {
         "maxDuration": 180
       }
     }

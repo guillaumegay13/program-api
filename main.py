@@ -29,12 +29,12 @@ class ProgramInput(BaseModel):
 
 app = FastAPI()
 
-@app.post("api/program/")
+@app.post("/api/program/")
 async def create_program(input_data: ProgramInput):
     result = Workflow(gptJsonModel, input_data.dict())
     return result
 
-@app.get("api/ping")
+@app.get("/api/ping")
 def ping():
     return "Hello!"
 
