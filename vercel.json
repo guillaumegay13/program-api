@@ -13,5 +13,10 @@
     ],
     "env": {
       "APP_MODULE": "main:app"
+    },
+    "functions": {
+      "app/api/**/*": {
+        "maxDuration": 180
+      }
     }
 }
