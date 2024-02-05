@@ -3,7 +3,6 @@ from langchain_community.chat_models import ChatOpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
-from mangum import Mangum
 
 gptJsonModel = ChatOpenAI(
     #models : https://platform.openai.com/docs/models/gpt-3-5
@@ -73,5 +72,4 @@ def ping():
     return "Hello!"
 
 if __name__ == "__main__":
-    handler = Mangum(app)
     uvicorn.run(app, host="0.0.0.0", port=8000)
