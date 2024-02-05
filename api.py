@@ -2,6 +2,7 @@ from chain import Chain
 import time
 
 class TrainProgramApi:
+class TrainProgramApi:
 
     def __init__(self, model, input):
 
@@ -9,6 +10,10 @@ class TrainProgramApi:
         self.model = model
         self.input = input
 
+    def run_workflow(self):
+
+        # Record the start time
+        start_time = time.time()
     def run_workflow(self):
 
         # Record the start time
