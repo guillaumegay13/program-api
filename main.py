@@ -29,11 +29,11 @@ class UserInput(BaseModel):
 
 # Need all user input plus evidences as dict
 class MethodsInput(UserInput):
-    evidences: dict
+    evidences: list
 
 # Need all user input plus methods as dict
 class ProgramInput(UserInput):
-    methods: dict
+    methods: list
 
 app = FastAPI()
 

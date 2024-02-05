@@ -13,13 +13,13 @@ t
 - docker push europe-west9-docker.pkg.dev/program-api-413117/program/fastapi-app:latest
 
 # Google Cloud Run (GCR)
-- Deploy : gcloud run deploy program-api-service --image europe-west9-docker.pkg.dev/program-api-413117/program/fastapi-app --region europe-west1 --allow-unauthenticated
+- Deploy : gcloud run deploy program-api-service --image europe-west9-docker.pkg.dev/program-api-413117/program/<image>:<tag> --region europe-west9 --allow-unauthenticated --timeout 3600 --set-env-vars OPEN1I_API_KEY=<open_ai_api_key>
 - https://program-api-service-qqoaabgxbq-ew.a.run.app
 - Get logs : gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=program-api-service" --project=program-api-413117 --limit=100 --format="value(textPayload)"
 
 # Google Kubernetes Engine (GKE)
-- Create a Kubernetes Cluster : gcloud container clusters create CLUSTER-NAME --region europe-west1
-- Get Credentials for the Cluster : gcloud container clusters get-credentials CLUSTER-NAME --region europe-west1
+- Create a Kubernetes Cluster : gcloud container clusters create CLUSTER-NAME --region europe-west9
+- Get Credentials for the Cluster : gcloud container clusters get-credentials CLUSTER-NAME --region europe-west9
 - Create deployment.yaml
 - Deploy : kubectl apply -f deployment.yaml
 - Expose deployment : kubectl expose deployment fastapi-app-deployment --type=LoadBalancer --port=80 --target-port=80
