@@ -1,0 +1,12 @@
+service: serverless-fastapi
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python
+
+functions:
+  api:
+    handler: app.handler
+    events:
+      - httpApi: '*'

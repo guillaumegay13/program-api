@@ -1,17 +1,18 @@
 from chain import Chain
 import time
 
-class Workflow:
+class TrainProgramApi:
 
     def __init__(self, model, input):
-
-        # Record the start time
-        start_time = time.time()
 
         # Init model and input
         self.model = model
         self.input = input
 
+    def run_workflow(self):
+
+        # Record the start time
+        start_time = time.time()
         # Provide evidences
         self.evidences = self.provide_evidences()
         # Concatenate dict to build the next input
