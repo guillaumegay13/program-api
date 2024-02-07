@@ -1,0 +1,8 @@
+fastapi
+langchain==0.1.0
+pydantic
+uvicorn
+openai
+uvicorn
+langchain-community
+mangum
