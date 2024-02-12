@@ -4,3 +4,8 @@ template.yaml
 program-api-*
 Dockerfile
 commands.txt
+test.py
+program.json
+.env
+prompt*
+*.jpg

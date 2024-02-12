@@ -6,7 +6,6 @@ class UnescapedJsonOutputParser(BaseOutputParser[dict]):
 
     def parse(self, input: str) -> dict:
         """Parse the output of an LLM call."""
-        print("UnescapedJsonOutputParse = " + str(input))
         # Convert the input JSON string to a dictionary
         input_dict = json.loads(input)
         return input_dict
