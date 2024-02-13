@@ -1,4 +1,4 @@
-from api import TrainProgramApi
+from src.api import TrainProgramApi
 from langchain_community.chat_models import ChatOpenAI
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
@@ -7,9 +7,9 @@ import time
 import requests
 import logging
 import base64
-from utils import read_config
+from src.utils import read_config
 
-config_file = 'config.yaml'
+config_file = 'config/config.yaml'
 config_data = read_config(config_file)
 
 TRIGGER_URL = config_data['zapier']['trigger_url']
