@@ -7,17 +7,18 @@ import time
 import requests
 import logging
 import base64
-import os
+from utils import read_config
 
-TRIGGER_URL = "https://hooks.zapier.com/hooks/catch/16469861/3l1ba2c/"
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+config_file = 'config.yaml'
+config_data = read_config(config_file)
+
+TRIGGER_URL = config_data['zapier']['trigger_url']
+OPENAI_API_KEY = config_data['openai']['key']
+GPT_MODEL = config_data['openai']['text_model']
 
 gptJsonModel = ChatOpenAI(
-    #models : https://platform.openai.com/docs/models/gpt-3-5
-    # trying GPT-4 turbo preview
-    model="gpt-4-1106-preview",
-    #model="gpt-3.5-turbo-1106",
-    model_kwargs={
+    model = GPT_MODEL,
+    model_kwargs = {
         "response_format": {
             "type": "json_object"
         }

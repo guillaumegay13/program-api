@@ -9,3 +9,5 @@ program.json
 .env
 prompt*
 *.jpg
+config.yaml
+samples
