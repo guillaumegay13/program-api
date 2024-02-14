@@ -6,8 +6,8 @@ import uvicorn
 import time
 import requests
 import logging
-import base64
-from src.utils import read_config
+from src.utils import read_config, extract_openai_response_content, load_template, generate_html
+from program_openai_api import ProgramOpenAI
 
 config_file = 'config/config.yaml'
 config_data = read_config(config_file)
@@ -15,6 +15,17 @@ config_data = read_config(config_file)
 TRIGGER_URL = config_data['zapier']['trigger_url']
 OPENAI_API_KEY = config_data['openai']['key']
 GPT_MODEL = config_data['openai']['text_model']
+config_file = 'config/config.yaml'
+config_data = read_config(config_file)
+
+IMAGE_MODEL = config_data['openai']['image_model']
+TEXT_MODEL = config_data['openai']['text_model']
+
+# Load the JSON prompt template
+template = load_template('config/prompts.json')
+
+image_system_prompt = template["analyse_image"][0]["system_template"]
+image_user_prompt = template["analyse_image"][0]["user_template"]
 
 gptJsonModel = ChatOpenAI(
     model = GPT_MODEL,
@@ -70,7 +81,8 @@ def generate_program_api(input_data: ProgramInput):
 # For the full workflow, only the User Input is needed
 @app.post("/api/generate_train_program/")
 def generate_train_program_api(input_data: UserInput):
-    return generate_program(input_data)
+    input = input_data.dict()
+    return generate_program(input)
 
 # Ping GET endpoint for testing purposes
 @app.get("/api/ping")
@@ -88,16 +100,21 @@ def generate_train_program_background_api(background_tasks: BackgroundTasks, inp
     return {"message": "Accepted. Your training program is being generated!"}
 
 def background_task(input_data: UserInput):
-    email = input_data.dict()["email"]
-    goal = input_data.dict()["goal"]
+    input = input_data.dict()
+    email = input["email"]
+    goal = input["goal"]
     logging.info(f"Task started for {email}.")
-    program = generate_program(input_data)
+    if input["image"]:
+        program = generate_program_multimodal(input)
+        html_body = generate_html(program, goal)
+    else:
+        program = generate_program(input)
+        html_body = generate_html(program, goal)
     logging.info(f"Task ended for {email}.")
-    trigger_zap(email, program, goal)
+    trigger_zap(email, html_body, goal)
     
-def trigger_zap(email, program, goal):
+def trigger_zap(email, html_body, goal):
     logging.info(f"Triggering Zap for {email}")
-    html_body = generate_html(program, goal)
     input = {'email': email, "body": html_body}
     response = requests.post(TRIGGER_URL, json=input)
     if response.status_code == 200:
@@ -105,8 +122,7 @@ def trigger_zap(email, program, goal):
     else:
         logging.info(f'Error: {response.status_code}')
 
-def generate_program(input_data):
-    input = input_data.dict()
+def generate_program(input):
     trainProgramApi = TrainProgramApi(gptJsonModel, input)
     # Run the end-to-end workflow
     # Record the start time
@@ -148,94 +164,44 @@ def generate_program(input_data):
     print("duration = " + str(duration))
     return program
 
-def generate_html(json_data, goal):
-    html = """
-    <html>
-        <head>
-            <style>
-                body {
-                    font-family: 'Courier New', Courier, monospace;
-                    margin: 20px;
-                    color: #000;
-                    background-color: #fff;
-                }
-                h2, h3 {
-                    border-bottom: 1px solid #000;
-                    padding-bottom: 5px;
-                }
-                p {
-                    margin: 5px 0 20px 0;
-                }
-                ul {
-                    list-style-type: none;
-                    padding-left: 0;
-                }
-                li {
-                    margin-bottom: 5px;
-                }
-            </style>
-        </head>
-        <body>
-    """
+def generate_program_multimodal(input_data):
     
-    introduction = f"""<p>Hello,</p>
-            <p>This email outlines your personalized workout plan designed to help you {goal}. Please review the weekly schedule and each session's details to get started.</p>"""
-    html += introduction
+    input = input_data.dict()
+    image_binary = input["image"]
 
-    for week in json_data['weeks']:
-        html += f"<h2>Week {week['weekNumber']}</h2><p>{week['weekDescription']}</p>"
-        for session in week['sessions']:
-            html += f"<h3>Session {session['sessionNumber']}</h3><p>{session['description']}</p><ul>"
-            # html += f"<li>{session['reference_to_method']}</li>"
-            html += "</ul>"
-            for exercise in session['exercises']:
-                html += f"""
-                <p><strong>{exercise['name']}</strong><br>
-                {exercise['description']}<br>
-                Execution: {exercise['execution']}<br>
-                Sets: {exercise['sets']}, Reps: {exercise['reps']}, Rest: {exercise['rest_in_seconds']} seconds</p>
-                """
+    api_client = ProgramOpenAI(TEXT_MODEL, IMAGE_MODEL, OPENAI_API_KEY)
+    image_analysis = api_client.analyse_image(image_binary)
 
-    conclusion = f"""<p>Good luck and stay strong!</p>"""
-    html += conclusion
+    # Error handling
+    assert image_analysis["muscular_definition_and_symmetry"] is not None, "muscular_definition_and_symmetry is null"
+    assert image_analysis["body_fat_percentage_estimate"] is not None, "body_fat_percentage_estimate is null"
+    assert image_analysis["strength_indicators"] is not None, "strength_indicators is null"
+    assert image_analysis["potential_weaknesses"] is not None, "potential_weaknesses is null"
 
-    html += """
-        </body>
-    </html>
-    """
-    return html
+    muscular_definition_and_symmetry = image_analysis["muscular_definition_and_symmetry"]
+    body_fat_percentage_estimate = image_analysis["body_fat_percentage_estimate"]
+    strength_indicators = image_analysis["strength_indicators"]
+    potential_weaknesses = image_analysis["potential_weaknesses"]
 
-def analyse_image(image_binary):
-    # Convert binary data to base64 encoded bytes
-    image_base64_bytes = base64.b64encode(image_binary).decode('utf-8')
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
-    }
+    # Input data
+    age = input["age"]
+    gender = input["gender"]
+    weight = input["weight"]
+    size = input["size"]
+    level = input["level"]
+    type = input["type"]
+    weeks = "one"
+    frequency = input["frequency"]
+    goal = input["goal"]
 
-    payload = {
-        "model": "gpt-4-vision-preview",
-        "messages": [
-        {
-            "role": "user",
-            "content": [
-            {"type": "text", "text": "What’s in this image?"},
-            {
-                "type": "image_url",
-                "image_url": {
-                "url": f"data:image/jpeg;base64,{image_base64_bytes}"
-                }
-            }
-            ]
-        }
-        ],
-        "max_tokens": 300
-    }
+    # Formatting the prompt with dynamic values
+    system_prompt = template["generate_program_BD"][0]["system_template"]
 
-    # Make the API request and print out the response
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    print(response.json())
+    # print (template["generate_program_BD"][0])
+    user_prompt = template["generate_program_BD"][0]["user_template_BD"].format(muscular_definition_and_symmetry=muscular_definition_and_symmetry, body_fat_percentage_estimate=body_fat_percentage_estimate, strength_indicators=strength_indicators, potential_weaknesses=potential_weaknesses, age=age, gender=gender, weight=weight, size=size, level=level, type=type, frequency=frequency, goal=goal, weeks=weeks)
+
+    program_BD = api_client.generate_program(system_prompt, user_prompt)
+    return(extract_openai_response_content(program_BD))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
