@@ -4,7 +4,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
-from json_output_parser import UnescapedJsonOutputParser
+from src.json_output_parser import UnescapedJsonOutputParser
 
 class Chain:
     def __init__(self, systemTemplate, userTemplate, model):

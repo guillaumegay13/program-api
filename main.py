@@ -7,7 +7,7 @@ import time
 import requests
 import logging
 from src.utils import read_config, extract_openai_response_content, load_template, generate_html
-from program_openai_api import ProgramOpenAI
+from src.program_openai_api import ProgramOpenAI
 
 config_file = 'config/config.yaml'
 config_data = read_config(config_file)

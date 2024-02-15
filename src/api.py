@@ -1,4 +1,4 @@
-from chain import Chain
+from src.chain import Chain
 import time
 import json
 import base64
