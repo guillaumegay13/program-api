@@ -1,6 +1,8 @@
 # program-api
 Tailor-made sports program generation API using LLM, FastAPI and deployed on GCP
 
+Live on : https://train-programs.ai/
+
 # HOWTO
 - docker build -t <image_name> .
 - docker run -p 8080:8080 <image_name>
