@@ -45,11 +45,20 @@ def generate_html(json_data, goal, include_body_analysis=False):
         </head>
         <body>
     """
-    
+
     introduction = f"""<p>Hello,</p>
             <p>This email outlines your personalized workout plan designed to help you {goal}. Please review the weekly schedule and each session's details to get started.</p>"""
     html += introduction
 
+    # Body Analysis first
+    if include_body_analysis:
+        html += f"<h2>Body Analysis</h2>"
+        html += f"<h3>Body Fat Percentage Estimation</h2><p>{json_data['body_fat_percentage_estimate']}</p>"
+        html += f"<h3>Muscular Definition and Symmetry</h3><p>{json_data['muscular_definition_and_symmetry']}</p>"
+        html += f"<h3>Strength Indicators</h3><p>{json_data['strength_indicators']}</p>"
+        html += f"<h3>Potential Weaknesses</h3><p>{json_data['potential_weaknesses']}</p>"
+
+    # Then Program
     for week in json_data['weeks']:
         html += f"<h2>Program</h2><p>{week['weekDescription']}</p>"
         for session in week['sessions']:
@@ -63,14 +72,6 @@ def generate_html(json_data, goal, include_body_analysis=False):
                 Execution: {exercise['execution']}<br>
                 Sets: {exercise['sets']}, Reps: {exercise['reps']}, Rest: {exercise['rest_in_seconds']} seconds</p>
                 """
-
-    if include_body_analysis:
-        # TODO continue....
-        html += f"<h2>Body Analysis</h2><p>{week['weekDescription']}</p>"
-        html += f""" 
-                <p><strong></strong><br>
-        """
-
 
     conclusion = f"""<p>Good luck and stay strong!</p>"""
     html += conclusion

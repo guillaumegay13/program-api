@@ -20,6 +20,9 @@ config_data = read_config(config_file)
 
 IMAGE_MODEL = config_data['openai']['image_model']
 TEXT_MODEL = config_data['openai']['text_model']
+TYPEFORM_TOKEN = config_data['typeform']['token']
+
+DEFAULT_WEEK_NUMBER = "one"
 
 # Load the JSON prompt template
 template = load_template('config/prompts.json')
@@ -48,7 +51,9 @@ class UserInput(BaseModel):
     age: int
     number_of_weeks: str = None
     email: str = None
-    image: bytes = None
+    # image is a URL
+    image: str = None
+    image_bytes: bytes = None
 
 # Need all user input plus evidences as dict
 class MethodsInput(UserInput):
@@ -105,15 +110,26 @@ def background_task(input_data: UserInput):
     goal = input["goal"]
     logging.info(f"Task started for {email}.")
     if input["image"]:
-        program = generate_program_multimodal(input)
-        html_body = generate_html(program, goal)
+        # Image is a URL like
+        # https://api.typeform.com/forms/oUyltSVy/responses/ytekltwpn4fmggq34s7kytekfln6xqq0/fields/fFn1Y2QDwCJQ/files/1dd1423e78c2-Will_Smith_Dad_Bod.png
+        image_url = input["image"]
+        typeform_headers = {
+            "Authorization": f"Bearer {TYPEFORM_TOKEN}"
+        }
+        typeform_response = requests.get(image_url, headers=typeform_headers)
+        if typeform_response.status_code == 200:
+            input["image_bytes"] = typeform_response.content
+            program = generate_program_multimodal(input)
+            html_body = generate_html(program, goal, True)
+        else:
+            logging.info(f'Error: {typeform_response.status_code}')
     else:
         program = generate_program(input)
         html_body = generate_html(program, goal)
     logging.info(f"Task ended for {email}.")
-    trigger_zap(email, html_body, goal)
+    trigger_zap(email, html_body)
     
-def trigger_zap(email, html_body, goal):
+def trigger_zap(email, html_body):
     logging.info(f"Triggering Zap for {email}")
     input = {'email': email, "body": html_body}
     response = requests.post(TRIGGER_URL, json=input)
@@ -164,13 +180,11 @@ def generate_program(input):
     print("duration = " + str(duration))
     return program
 
-def generate_program_multimodal(input_data):
-    
-    input = input_data.dict()
-    image_binary = input["image"]
+def generate_program_multimodal(input):
+    image_binary = input["image_bytes"]
 
     api_client = ProgramOpenAI(TEXT_MODEL, IMAGE_MODEL, OPENAI_API_KEY)
-    image_analysis = api_client.analyse_image(image_binary)
+    image_analysis = api_client.analyse_image(image_binary, image_system_prompt, image_user_prompt)
 
     # Error handling
     assert image_analysis["muscular_definition_and_symmetry"] is not None, "muscular_definition_and_symmetry is null"
@@ -190,7 +204,7 @@ def generate_program_multimodal(input_data):
     size = input["size"]
     level = input["level"]
     type = input["type"]
-    weeks = "one"
+    weeks = DEFAULT_WEEK_NUMBER
     frequency = input["frequency"]
     goal = input["goal"]
 
@@ -200,8 +214,9 @@ def generate_program_multimodal(input_data):
     # print (template["generate_program_BD"][0])
     user_prompt = template["generate_program_BD"][0]["user_template_BD"].format(muscular_definition_and_symmetry=muscular_definition_and_symmetry, body_fat_percentage_estimate=body_fat_percentage_estimate, strength_indicators=strength_indicators, potential_weaknesses=potential_weaknesses, age=age, gender=gender, weight=weight, size=size, level=level, type=type, frequency=frequency, goal=goal, weeks=weeks)
 
-    program_BD = api_client.generate_program(system_prompt, user_prompt)
-    return(extract_openai_response_content(program_BD))
+    program_json = api_client.generate_program(system_prompt, user_prompt)
+    
+    return({**program_json, **image_analysis})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

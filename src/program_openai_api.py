@@ -38,20 +38,17 @@ class ProgramOpenAI():
             max_tokens = 1500,
         )
 
-        # Extract response
-        json_content = extract_openai_response_content(response.json())
+        parsed_response = extract_openai_response_content(response.json())
+        
+        print(f"image response : {parsed_response}")
 
-        # Parse the extracted JSON string
-        content_data = json.loads(json_content)
-
-        # Return content data
-        return(content_data)
+        return json.loads(parsed_response)
     
     def generate_program(self, input_system_prompt, input_user_prompt):
 
         response = self.client.chat.completions.create(
             model = self.text_model,
-            # response_format={ "type": "json_object" },
+            response_format={ "type": "json_object" },
             messages=[
                 {"role": "system", "content": input_system_prompt},
                 {
@@ -65,4 +62,9 @@ class ProgramOpenAI():
             max_tokens=4000,
         )
 
-        return response.json()
+        parsed_response = extract_openai_response_content(response.json())
+
+        print(f"Type of program parsed_response: {type(parsed_response)}")
+        print(f"program response : {parsed_response}")
+
+        return json.loads(parsed_response)
