@@ -40,7 +40,7 @@ class ProgramOpenAI():
 
         parsed_response = extract_openai_response_content(response.json())
         
-        print(f"image response : {parsed_response}")
+        # print(f"image response : {parsed_response}")
 
         return json.loads(parsed_response)
     
@@ -64,7 +64,6 @@ class ProgramOpenAI():
 
         parsed_response = extract_openai_response_content(response.json())
 
-        print(f"Type of program parsed_response: {type(parsed_response)}")
-        print(f"program response : {parsed_response}")
+        # print(f"program response : {parsed_response}")
 
         return json.loads(parsed_response)

@@ -214,9 +214,9 @@ def generate_program_multimodal(input):
     # print (template["generate_program_BD"][0])
     user_prompt = template["generate_program_BD"][0]["user_template_BD"].format(muscular_definition_and_symmetry=muscular_definition_and_symmetry, body_fat_percentage_estimate=body_fat_percentage_estimate, strength_indicators=strength_indicators, potential_weaknesses=potential_weaknesses, age=age, gender=gender, weight=weight, size=size, level=level, type=type, frequency=frequency, goal=goal, weeks=weeks)
 
-    program_json = api_client.generate_program(system_prompt, user_prompt)
+    program = api_client.generate_program(system_prompt, user_prompt)
     
-    return({**program_json, **image_analysis})
+    return({**program, **image_analysis})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
