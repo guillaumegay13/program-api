@@ -108,7 +108,7 @@ def insert_complete_program(program_data, client, email):
                 "week_id": week_id,
                 "number": session['sessionNumber'],
                 "description": session['description'],
-                "reference_to_method": session['reference_to_method']
+                "reference": session['reference_to_method']
             }).execute()
 
             session_id = session_response.data[0]['id']
