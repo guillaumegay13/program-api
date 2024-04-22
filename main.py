@@ -56,11 +56,14 @@ class UserInput(BaseModel):
     size: int
     weight: int
     age: int
+<<<<<<< HEAD
     number_of_weeks: str = None
     email: str = None
     # image is a URL
     image: str = None
     image_bytes: bytes = None
+=======
+>>>>>>> 77c490e6adccaf71de50a1067cedd8abdc222c5e
 
 # Need all user input plus evidences as dict
 class MethodsInput(UserInput):
@@ -73,12 +76,17 @@ class ProgramInput(UserInput):
 app = FastAPI()
 
 @app.post("/api/provide_evidences/")
+<<<<<<< HEAD
 async def provide_evidences_api(input_data: UserInput):
+=======
+async def provide_evidences(input_data: UserInput):
+>>>>>>> 77c490e6adccaf71de50a1067cedd8abdc222c5e
     trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
     evidences = trainProgramApi.provide_evidences()
     return evidences
 
 @app.post("/api/generate_methods/")
+<<<<<<< HEAD
 async def generate_methods_api(input_data: MethodsInput):
     trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
     methods = trainProgramApi.generate_methods(input_data.dict())
@@ -88,19 +96,42 @@ async def generate_methods_api(input_data: MethodsInput):
 def generate_program_api(input_data: ProgramInput):
     trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
     program = trainProgramApi.generate_program(input_data.dict())
+=======
+async def generate_methods(input_data: MethodsInput):
+    trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
+    evidences = trainProgramApi.provide_evidences()
+    methods = trainProgramApi.generate_methods(evidences)
+    return methods
+
+@app.post("/api/generate_program/")
+async def generate_program(input_data: ProgramInput):
+    trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
+    evidences = trainProgramApi.provide_evidences()
+    methods = trainProgramApi.generate_methods(evidences)
+    program = trainProgramApi.generate_program(methods)
+>>>>>>> 77c490e6adccaf71de50a1067cedd8abdc222c5e
     return program
 
 # For the full workflow, only the User Input is needed
 @app.post("/api/generate_train_program/")
+<<<<<<< HEAD
 def generate_train_program_api(input_data: UserInput):
     input = input_data.dict()
     return generate_program(input)
+=======
+async def generate_train_program(input_data: UserInput):
+    trainProgramApi = TrainProgramApi(gptJsonModel, input_data.dict())
+    # Run the end-to-end workflow
+    # TODO : write the workflow code below instead of a class method
+    trainProgramApi.run_workflow()
+>>>>>>> 77c490e6adccaf71de50a1067cedd8abdc222c5e
 
 # Ping GET endpoint for testing purposes
 @app.get("/api/ping")
 def ping():
     return "Hello!"
 
+<<<<<<< HEAD
 # For the full workflow, only the User Input is needed
 @app.post("/api/generate_train_program/")
 def generate_train_program_api(input_data: UserInput):
@@ -228,5 +259,7 @@ def generate_program_multimodal(input):
     
     return({**program, **image_analysis})
 
+=======
+>>>>>>> 77c490e6adccaf71de50a1067cedd8abdc222c5e
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
