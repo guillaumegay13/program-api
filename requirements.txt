@@ -6,3 +6,4 @@ openai
 uvicorn
 langchain-community
 requests
+supabase

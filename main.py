@@ -8,6 +8,7 @@ import requests
 import logging
 from src.utils import read_config, extract_openai_response_content, load_template, generate_html
 from src.program_openai_api import ProgramOpenAI
+from supabase import create_client, Client
 
 config_file = 'config/config.yaml'
 config_data = read_config(config_file)
@@ -22,7 +23,13 @@ IMAGE_MODEL = config_data['openai']['image_model']
 TEXT_MODEL = config_data['openai']['text_model']
 TYPEFORM_TOKEN = config_data['typeform']['token']
 
+# Supabase
+SUPABASE_URL = config_data['supabase']['url']
+SUPABASE_KEY = config_data['supabase']['key']
+
 DEFAULT_WEEK_NUMBER = "one"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Load the JSON prompt template
 template = load_template('config/prompts.json')
@@ -127,6 +134,9 @@ def background_task(input_data: UserInput):
         program = generate_program(input)
         html_body = generate_html(program, goal)
     logging.info(f"Task ended for {email}.")
+
+    supabase.table('programs').insert({"user_email": email, "program_raw": program}).execute()
+
     trigger_zap(email, html_body)
     
 def trigger_zap(email, html_body):
