@@ -6,7 +6,7 @@ import uvicorn
 import time
 import requests
 import logging
-from src.utils import read_config, extract_openai_response_content, load_template, generate_html
+from src.utils import read_config, extract_openai_response_content, load_template, generate_html, insert_complete_program
 from src.program_openai_api import ProgramOpenAI
 from supabase import create_client, Client
 
@@ -140,12 +140,11 @@ def background_task(input_data: UserInput):
     else:
         program = generate_program(input)
         html_body = generate_html(program, goal)
-    logging.info(f"Task ended for {email}.")
-
-    # Store program
-    supabase.table('programs').insert({"user_email": email, "program_raw": program}).execute()
-    # Store user profile
-    supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
+        # Store program
+        insert_complete_program(program, supabase, email)
+        # Store user profile
+        supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
+        logging.info(f"Task ended for {email}.")
 
     trigger_zap(email, html_body)
     

@@ -81,3 +81,59 @@ def generate_html(json_data, goal, include_body_analysis=False):
     </html>
     """
     return html
+
+def insert_complete_program(program_data, client, email):
+
+    # Insert program
+    program_response = client.table("programs").insert({
+        "user_email": email,
+        "program_raw": program_data
+    }).execute()
+
+    program_id = program_response.data[0]['id']
+
+    # Insert weeks
+    for week in program_data['weeks']:
+        week_response = client.table("weeks").insert({
+            "program_id": program_id,
+            "number": week['weekNumber'],
+            "description": week['weekDescription']
+        }).execute()
+
+        week_id = week_response.data[0]['id']
+
+        # Insert sessions
+        for session in week['sessions']:
+            session_response = client.table("sessions").insert({
+                "week_id": week_id,
+                "number": session['sessionNumber'],
+                "description": session['description'],
+                "reference_to_method": session['reference_to_method']
+            }).execute()
+
+            session_id = session_response.data[0]['id']
+
+            # Insert exercises and session exercises
+            for exercise in session['exercises']:
+                # Check if exercise already exists in the database to avoid duplication
+                existing_exercise = client.table("exercises").select("*").eq("name", exercise['name']).execute()
+                if not existing_exercise.data:
+                    exercise_response = client.table("exercises").insert({
+                        "name": exercise['name'],
+                        "description": exercise['description'],
+                        "execution": exercise['execution']
+                    }).execute()
+                    exercise_id = exercise_response.data[0]['id']
+                else:
+                    exercise_id = existing_exercise.data[0]['id']
+
+                # Insert session specific exercise details
+                session_exercise_response = client.table("session_exercises").insert({
+                    "session_id": session_id,
+                    "exercise_id": exercise_id,
+                    "sets": exercise['sets'],
+                    "reps": exercise['reps'],
+                    "rest_in_seconds": exercise['rest_in_seconds']
+                }).execute()
+
+    return "Program and all related data inserted successfully"
