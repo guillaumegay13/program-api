@@ -115,6 +115,13 @@ def background_task(input_data: UserInput):
     input = input_data.dict()
     email = input["email"]
     goal = input["goal"]
+    gender = input['gender']
+    level = input['level']
+    frequency = input['frequency']
+    goal = input['goal']
+    size_in_cm = input['size']
+    weight_in_kg = input['weight']
+    age = input['age']
     logging.info(f"Task started for {email}.")
     if input["image"]:
         # Image is a URL like
@@ -135,7 +142,10 @@ def background_task(input_data: UserInput):
         html_body = generate_html(program, goal)
     logging.info(f"Task ended for {email}.")
 
+    # Store program
     supabase.table('programs').insert({"user_email": email, "program_raw": program}).execute()
+    # Store user profile
+    supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
 
     trigger_zap(email, html_body)
     
