@@ -3,7 +3,7 @@ from openai import OpenAI
 import json
 from src.utils import extract_openai_response_content
 
-class ProgramOpenAI():
+class OpenAIClient():
 
     def __init__(self, text_model, image_model, openai_api_key):
 
@@ -42,9 +42,40 @@ class ProgramOpenAI():
         
         # print(f"image response : {parsed_response}")
 
-        return json.loads(parsed_response)
+        try:
+            image_analysis = json.loads(parsed_response)
+            returned = True
+        except (json.JSONDecodeError, TypeError):
+            image_analysis = 'It was not possible to extract information about the provided image.'
+            returned = False
+
+        return image_analysis, returned
     
     def generate_program(self, input_system_prompt, input_user_prompt):
+
+        response = self.client.chat.completions.create(
+            model = self.text_model,
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": input_system_prompt},
+                {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{input_user_prompt}"}
+                ],
+                }
+            ],
+            # Configurable ?
+            max_tokens=4000,
+        )
+
+        parsed_response = extract_openai_response_content(response.json())
+
+        # print(f"program response : {parsed_response}")
+
+        return json.loads(parsed_response)
+    
+    def invoke(self, input_system_prompt, input_user_prompt):
 
         response = self.client.chat.completions.create(
             model = self.text_model,
