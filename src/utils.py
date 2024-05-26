@@ -154,6 +154,7 @@ def insert_complete_program(program_data, client, email, input):
                 session_date = get_session_date(program_start_date, days_of_week[program_start_day], days_of_week[days[session['sessionNumber'] - 1]], week["weekNumber"])
                 session_response = client.table("sessions").insert({
                     "week_id": week_id,
+                    "user_email": email,
                     "name": session["sessionName"],
                     "number": session['sessionNumber'],
                     "description": session['description'],
@@ -164,6 +165,7 @@ def insert_complete_program(program_data, client, email, input):
             else:
                 session_response = client.table("sessions").insert({
                     "week_id": week_id,
+                    "user_email": email,
                     "name": session["sessionName"],
                     "number": session['sessionNumber'],
                     "description": session['description'],
