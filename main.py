@@ -62,6 +62,7 @@ class UserInput(BaseModel):
     # image is a URL
     image: str = None
     image_bytes: bytes = None
+    days: str = None
 
 # Need all user input plus evidences as dict
 class MethodsInput(UserInput):
@@ -119,7 +120,8 @@ def background_task(input_data: UserInput):
     weight_in_kg = input['weight']
     age = input['age']
     logging.info(f"Task started for {email}.")
-    if input["image"]:
+
+    if input['image']:
         # Image is a URL like
         # https://api.typeform.com/forms/oUyltSVy/responses/ytekltwpn4fmggq34s7kytekfln6xqq0/fields/fFn1Y2QDwCJQ/files/1dd1423e78c2-Will_Smith_Dad_Bod.png
         image_url = input["image"]
@@ -137,7 +139,7 @@ def background_task(input_data: UserInput):
         program = generate_program(input)
         html_body = generate_html(program, goal)
         # Store program
-        insert_complete_program(program, supabase, email)
+        insert_complete_program(program, supabase, email, input)
         # Store user profile
         supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
         logging.info(f"Task ended for {email}.")
@@ -187,7 +189,7 @@ def generate_program(input):
 
     # Generate program from the methods
     program = generate_program_from_methods({**input, **methods}, api_client)
-
+    
     return program
 
 def review_program(input, api_client):

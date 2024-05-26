@@ -1,5 +1,17 @@
 import yaml
 import json
+from datetime import datetime, timedelta
+
+# Define a dictionary to map day names to their corresponding integer value
+days_of_week = {
+    'monday': 0,
+    'tuesday': 1,
+    'wednesday': 2,
+    'thursday': 3,
+    'friday': 4,
+    'saturday': 5,
+    'sunday': 6
+}
 
 def read_config(file_path):
     with open(file_path, 'r') as stream:
@@ -58,11 +70,15 @@ def generate_html(json_data, goal, include_body_analysis=False):
         html += f"<h3>Strength Indicators</h3><p>{json_data['strength_indicators']}</p>"
         html += f"<h3>Potential Weaknesses</h3><p>{json_data['potential_weaknesses']}</p>"
 
+    html += f"<h2>Program</h2>"
+
     # Then Program
+    index = 1
     for week in json_data['weeks']:
-        html += f"<h2>Program</h2><p>{week['weekDescription']}</p>"
+        html += f"<h3>Week {index}</h3><p>{week['weekDescription']}</p>"
+        index += 1
         for session in week['sessions']:
-            html += f"<h3>Session {session['sessionNumber']}</h3><p>{session['description']}</p><ul>"
+            html += f"<h4>Session {session['sessionNumber']}</h4><p>{session['description']}</p><ul>"
             # html += f"<li>{session['reference_to_method']}</li>"
             html += "</ul>"
             for exercise in session['exercises']:
@@ -82,13 +98,42 @@ def generate_html(json_data, goal, include_body_analysis=False):
     """
     return html
 
-def insert_complete_program(program_data, client, email):
+def insert_complete_program(program_data, client, email, input):
 
-    # Insert program
-    program_response = client.table("programs").insert({
-        "user_email": email,
-        "program_raw": program_data
-    }).execute()
+    days_specified = False
+
+    if 'days' in input:
+
+        days_specified = True
+
+        # days as list
+        days = input['days'].replace(' ', '').split(',')
+
+        if len(days) != input["frequency"]:
+            print("days don't match the frequency!")
+
+        # Start date of the program is today, but it can be changed in the user's input
+        today = datetime.now().date()
+
+        # Start day of the program is the first selected day, which means it will start next week
+        program_start_day = days[0]
+
+        # program_start_date is the exact date when the program starts
+        program_start_date = get_program_start_date(program_start_day, today)
+
+        # Insert program
+        program_response = client.table("programs").insert({
+            "user_email": email,
+            "program_raw": program_data,
+            "start_date": program_start_date.isoformat() # as ISO 8601 string to be stored in supabase database
+        }).execute()
+
+    else:
+        # Insert program
+        program_response = client.table("programs").insert({
+            "user_email": email,
+            "program_raw": program_data
+        }).execute()
 
     program_id = program_response.data[0]['id']
 
@@ -104,12 +149,27 @@ def insert_complete_program(program_data, client, email):
 
         # Insert sessions
         for session in week['sessions']:
-            session_response = client.table("sessions").insert({
-                "week_id": week_id,
-                "number": session['sessionNumber'],
-                "description": session['description'],
-                "reference": session['reference_to_method']
-            }).execute()
+            if days_specified:
+                # days start at 0 while sessionNumner starts at 1
+                session_date = get_session_date(program_start_date, days_of_week[program_start_day], days_of_week[days[session['sessionNumber'] - 1]], week["weekNumber"])
+                session_response = client.table("sessions").insert({
+                    "week_id": week_id,
+                    "name": session["sessionName"],
+                    "number": session['sessionNumber'],
+                    "description": session['description'],
+                    "reference": session['reference_to_method'],
+                    "number_of_exercices": len(session['exercises']),
+                    "session_date": session_date.isoformat()  # as ISO 8601 string to be stored in supabase database
+                }).execute()
+            else:
+                session_response = client.table("sessions").insert({
+                    "week_id": week_id,
+                    "name": session["sessionName"],
+                    "number": session['sessionNumber'],
+                    "description": session['description'],
+                    "reference": session['reference_to_method'],
+                    "number_of_exercices": len(session['exercises'])
+                }).execute()
 
             session_id = session_response.data[0]['id']
 
@@ -137,3 +197,22 @@ def insert_complete_program(program_data, client, email):
                 }).execute()
 
     return "Program and all related data inserted successfully"
+
+def get_program_start_date(start_day, today):
+
+    # Get the integer value for the target day
+    target_day_num = days_of_week[start_day.lower()]
+
+    # Calculate how many days until the next occurrence of the target day
+    days_until_next_target = (target_day_num - today.weekday() + 7) % 7
+    if days_until_next_target == 0:  # If today is the target day, get the next occurrence
+        days_until_next_target = 7
+
+    # Get the date of the next target day
+    next_target_date = today + timedelta(days=days_until_next_target)
+    return next_target_date
+
+# date, int, int, int
+def get_session_date(program_start_date, start_day, session_day, week_number):
+    session_date = program_start_date + timedelta(days=(session_day - start_day) + (week_number - 1) * 7)
+    return session_date
