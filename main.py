@@ -8,6 +8,15 @@ import logging
 from src.utils import read_config, load_template, generate_html, insert_complete_program
 from src.openai_client import OpenAIClient
 from supabase import create_client, Client
+import firebase_admin
+from firebase_admin import credentials, firestore
+from firebase_test import FirebaseService
+
+# Firebase
+cred = credentials.Certificate("config/train-3328b-firebase-adminsdk-sz3ho-6f187f09df.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+firebase_service = FirebaseService(db)
 
 config_file = 'config/config.yaml'
 config_data = read_config(config_file)
@@ -139,8 +148,9 @@ def background_task(input_data: UserInput):
         program = generate_program(input)
         html_body = generate_html(program, goal)
         # Store program
-        insert_complete_program(program, supabase, email, input)
+        insert_complete_program(program, supabase, email, input, firebase_service)
         # Store user profile
+        firebase_service.insert_profile(email, gender, age, goal, level, frequency, size_in_cm, weight_in_kg)
         supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
         logging.info(f"Task ended for {email}.")
 

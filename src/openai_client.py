@@ -95,6 +95,6 @@ class OpenAIClient():
 
         parsed_response = extract_openai_response_content(response.json())
 
-        # print(f"program response : {parsed_response}")
+        print(f"program response : {parsed_response}")
 
         return json.loads(parsed_response)

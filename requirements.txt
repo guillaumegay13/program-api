@@ -7,3 +7,4 @@ uvicorn
 langchain-community
 requests
 supabase
+firebase_admin

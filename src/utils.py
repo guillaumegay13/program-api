@@ -98,9 +98,10 @@ def generate_html(json_data, goal, include_body_analysis=False):
     """
     return html
 
-def insert_complete_program(program_data, client, email, input):
+def insert_complete_program(program_data, client, email, input, firebase_service):
 
     days_specified = False
+    today = datetime.now().date()
 
     if 'days' in input:
 
@@ -112,28 +113,25 @@ def insert_complete_program(program_data, client, email, input):
         if len(days) != input["frequency"]:
             print("days don't match the frequency!")
 
-        # Start date of the program is today, but it can be changed in the user's input
-        today = datetime.now().date()
-
         # Start day of the program is the first selected day, which means it will start next week
         program_start_day = days[0]
 
         # program_start_date is the exact date when the program starts
         program_start_date = get_program_start_date(program_start_day, today)
-
-        # Insert program
-        program_response = client.table("programs").insert({
-            "user_email": email,
-            "program_raw": program_data,
-            "start_date": program_start_date.isoformat() # as ISO 8601 string to be stored in supabase database
-        }).execute()
-
     else:
-        # Insert program
-        program_response = client.table("programs").insert({
-            "user_email": email,
-            "program_raw": program_data
-        }).execute()
+        # Start date of the program is today
+        program_start_date = today = datetime.now().date()
+
+
+    # Insert program
+    # convert date to datetime for Firebase
+    program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
+    firebase_service.insert_program(email, program_data, program_start_datetime)
+    program_response = client.table("programs").insert({
+        "user_email": email,
+        "program_raw": program_data,
+        "start_date": program_start_date.isoformat() # as ISO 8601 string to be stored in supabase database
+    }).execute()
 
     program_id = program_response.data[0]['id']
 
@@ -152,6 +150,7 @@ def insert_complete_program(program_data, client, email, input):
             if days_specified:
                 # days start at 0 while sessionNumner starts at 1
                 session_date = get_session_date(program_start_date, days_of_week[program_start_day], days_of_week[days[session['sessionNumber'] - 1]], week["weekNumber"])
+
                 session_response = client.table("sessions").insert({
                     "week_id": week_id,
                     "user_email": email,
@@ -162,6 +161,18 @@ def insert_complete_program(program_data, client, email, input):
                     "number_of_exercices": len(session['exercises']),
                     "session_date": session_date.isoformat()  # as ISO 8601 string to be stored in supabase database
                 }).execute()
+
+                # Firebase
+                data_to_insert = {
+                    "week_id": week_id,
+                    "user_email": email,
+                    "name": session["sessionName"],
+                    "number": session['sessionNumber'],
+                    "description": session['description'],
+                    "reference": session['reference_to_method'],
+                    "number_of_exercises": len(session['exercises']),
+                    "session_date": datetime.combine(session_date, datetime.min.time())
+                }
             else:
                 session_response = client.table("sessions").insert({
                     "week_id": week_id,
@@ -173,12 +184,38 @@ def insert_complete_program(program_data, client, email, input):
                     "number_of_exercices": len(session['exercises'])
                 }).execute()
 
+                data_to_insert = {
+                    "week_id": week_id,
+                    "user_email": email,
+                    "name": session["sessionName"],
+                    "number": session['sessionNumber'],
+                    "description": session['description'],
+                    "reference": session['reference_to_method'],
+                    "number_of_exercises": len(session['exercises'])
+                }
+
+            firebase_session_id = firebase_service.insert('sessions', data_to_insert)
             session_id = session_response.data[0]['id']
 
             # Insert exercises and session exercises
             for exercise in session['exercises']:
+                exercise_name = exercise['name']
                 # Check if exercise already exists in the database to avoid duplication
-                existing_exercise = client.table("exercises").select("*").eq("name", exercise['name']).execute()
+                existing_exercise = client.table("exercises").select("*").eq("name", exercise_name).execute()
+
+                # Firebase
+                existing_exercise_response = firebase_service.get_existing_exercise(exercise_name)
+                if not existing_exercise_response:
+                    data_to_insert = {
+                        "name": exercise['name'],
+                        "description": exercise['description'],
+                        "execution": exercise['execution']
+                    }
+                    firebase_exercise_id = firebase_service.insert('exercises', data_to_insert)
+                else:
+                    firebase_exercise_id = existing_exercise_response[0].id
+
+                # Supabase
                 if not existing_exercise.data:
                     exercise_response = client.table("exercises").insert({
                         "name": exercise['name'],
@@ -189,6 +226,17 @@ def insert_complete_program(program_data, client, email, input):
                 else:
                     exercise_id = existing_exercise.data[0]['id']
 
+
+                # Firebase
+                firebase_service.insert('session_exercises', {
+                    "session_id": firebase_session_id,
+                    "exercise_id": firebase_exercise_id,
+                    "sets": exercise['sets'],
+                    "reps": exercise['reps'],
+                    "rest_in_seconds": exercise['rest_in_seconds']
+                })
+
+                # Supabase
                 # Insert session specific exercise details
                 session_exercise_response = client.table("session_exercises").insert({
                     "session_id": session_id,
