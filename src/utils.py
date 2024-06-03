@@ -127,44 +127,17 @@ def insert_complete_program(program_data, client, email, input, firebase_service
     # convert date to datetime for Firebase
     program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
     firebase_service.insert_program(email, program_data, program_start_datetime)
-    program_response = client.table("programs").insert({
-        "user_email": email,
-        "program_raw": program_data,
-        "start_date": program_start_date.isoformat() # as ISO 8601 string to be stored in supabase database
-    }).execute()
-
-    program_id = program_response.data[0]['id']
 
     # Insert weeks
     for week in program_data['weeks']:
-        week_response = client.table("weeks").insert({
-            "program_id": program_id,
-            "number": week['weekNumber'],
-            "description": week['weekDescription']
-        }).execute()
-
-        week_id = week_response.data[0]['id']
-
         # Insert sessions
         for session in week['sessions']:
             if days_specified:
                 # days start at 0 while sessionNumner starts at 1
                 session_date = get_session_date(program_start_date, days_of_week[program_start_day], days_of_week[days[session['sessionNumber'] - 1]], week["weekNumber"])
 
-                session_response = client.table("sessions").insert({
-                    "week_id": week_id,
-                    "user_email": email,
-                    "name": session["sessionName"],
-                    "number": session['sessionNumber'],
-                    "description": session['description'],
-                    "reference": session['reference_to_method'],
-                    "number_of_exercices": len(session['exercises']),
-                    "session_date": session_date.isoformat()  # as ISO 8601 string to be stored in supabase database
-                }).execute()
-
                 # Firebase
-                data_to_insert = {
-                    "week_id": week_id,
+                session_data_to_insert = {
                     "user_email": email,
                     "name": session["sessionName"],
                     "number": session['sessionNumber'],
@@ -174,18 +147,7 @@ def insert_complete_program(program_data, client, email, input, firebase_service
                     "session_date": datetime.combine(session_date, datetime.min.time())
                 }
             else:
-                session_response = client.table("sessions").insert({
-                    "week_id": week_id,
-                    "user_email": email,
-                    "name": session["sessionName"],
-                    "number": session['sessionNumber'],
-                    "description": session['description'],
-                    "reference": session['reference_to_method'],
-                    "number_of_exercices": len(session['exercises'])
-                }).execute()
-
-                data_to_insert = {
-                    "week_id": week_id,
+                session_data_to_insert = {
                     "user_email": email,
                     "name": session["sessionName"],
                     "number": session['sessionNumber'],
@@ -194,15 +156,11 @@ def insert_complete_program(program_data, client, email, input, firebase_service
                     "number_of_exercises": len(session['exercises'])
                 }
 
-            firebase_session_id = firebase_service.insert('sessions', data_to_insert)
-            session_id = session_response.data[0]['id']
+            exercises_data = []
 
             # Insert exercises and session exercises
             for exercise in session['exercises']:
                 exercise_name = exercise['name']
-                # Check if exercise already exists in the database to avoid duplication
-                existing_exercise = client.table("exercises").select("*").eq("name", exercise_name).execute()
-
                 # Firebase
                 existing_exercise_response = firebase_service.get_existing_exercise(exercise_name)
                 if not existing_exercise_response:
@@ -215,36 +173,15 @@ def insert_complete_program(program_data, client, email, input, firebase_service
                 else:
                     firebase_exercise_id = existing_exercise_response[0].id
 
-                # Supabase
-                if not existing_exercise.data:
-                    exercise_response = client.table("exercises").insert({
-                        "name": exercise['name'],
-                        "description": exercise['description'],
-                        "execution": exercise['execution']
-                    }).execute()
-                    exercise_id = exercise_response.data[0]['id']
-                else:
-                    exercise_id = existing_exercise.data[0]['id']
-
-
-                # Firebase
-                firebase_service.insert('session_exercises', {
-                    "session_id": firebase_session_id,
+                exercises_data.append({
                     "exercise_id": firebase_exercise_id,
                     "sets": exercise['sets'],
                     "reps": exercise['reps'],
                     "rest_in_seconds": exercise['rest_in_seconds']
                 })
 
-                # Supabase
-                # Insert session specific exercise details
-                session_exercise_response = client.table("session_exercises").insert({
-                    "session_id": session_id,
-                    "exercise_id": exercise_id,
-                    "sets": exercise['sets'],
-                    "reps": exercise['reps'],
-                    "rest_in_seconds": exercise['rest_in_seconds']
-                }).execute()
+            # Insert session exercises as a subcollection of the session
+            firebase_service.insert_session_with_exercises(session_data_to_insert, exercises_data)
 
     return "Program and all related data inserted successfully"
 

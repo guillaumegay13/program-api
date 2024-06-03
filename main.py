@@ -10,7 +10,7 @@ from src.openai_client import OpenAIClient
 from supabase import create_client, Client
 import firebase_admin
 from firebase_admin import credentials, firestore
-from firebase_test import FirebaseService
+from firebase_service import FirebaseService
 
 # Firebase
 cred = credentials.Certificate("config/train-3328b-firebase-adminsdk-sz3ho-6f187f09df.json")

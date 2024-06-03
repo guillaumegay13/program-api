@@ -15,4 +15,4 @@ config
 documentation
 db_test.py
 groq_test.py
-firebase_test.py
+firebase_service.py
