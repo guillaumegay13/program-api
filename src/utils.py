@@ -74,7 +74,7 @@ def generate_html(json_data, goal, include_body_analysis=False):
 
     # Then Program
     index = 1
-    for week in json_data['weeks']:
+    for week in json_data['program']['weeks']:
         html += f"<h3>Week {index}</h3><p>{week['weekDescription']}</p>"
         index += 1
         for session in week['sessions']:
@@ -98,7 +98,7 @@ def generate_html(json_data, goal, include_body_analysis=False):
     """
     return html
 
-def insert_complete_program(program_data, client, email, input, firebase_service):
+def insert_complete_program(program_data, email, input, firebase_service):
 
     days_specified = False
     today = datetime.now().date()
@@ -122,14 +122,17 @@ def insert_complete_program(program_data, client, email, input, firebase_service
         # Start date of the program is today
         program_start_date = today = datetime.now().date()
 
-
-    # Insert program
+    # Parse program
+    program = program_data["program"]
+    program_name = program["programName"]
+    program_description = program["programDescription"]
     # convert date to datetime for Firebase
     program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
-    firebase_service.insert_program(email, program_data, program_start_datetime)
+    # Insert program
+    firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description)
 
     # Insert weeks
-    for week in program_data['weeks']:
+    for week in program['weeks']:
         # Insert sessions
         for session in week['sessions']:
             if days_specified:

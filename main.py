@@ -7,7 +7,6 @@ import requests
 import logging
 from src.utils import read_config, load_template, generate_html, insert_complete_program
 from src.openai_client import OpenAIClient
-from supabase import create_client, Client
 import firebase_admin
 from firebase_admin import credentials, firestore
 from firebase_service import FirebaseService
@@ -31,13 +30,7 @@ IMAGE_MODEL = config_data['openai']['image_model']
 TEXT_MODEL = config_data['openai']['text_model']
 TYPEFORM_TOKEN = config_data['typeform']['token']
 
-# Supabase
-SUPABASE_URL = config_data['supabase']['url']
-SUPABASE_KEY = config_data['supabase']['key']
-
 DEFAULT_WEEK_NUMBER = "one"
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 OPENAI_API_CLIENT = OpenAIClient(TEXT_MODEL, IMAGE_MODEL, OPENAI_API_KEY)
 
@@ -148,10 +141,9 @@ def background_task(input_data: UserInput):
         program = generate_program(input)
         html_body = generate_html(program, goal)
         # Store program
-        insert_complete_program(program, supabase, email, input, firebase_service)
+        insert_complete_program(program, email, input, firebase_service)
         # Store user profile
         firebase_service.insert_profile(email, gender, age, goal, level, frequency, size_in_cm, weight_in_kg)
-        supabase.table('profiles').insert({"user_email": email, "gender": gender, 'age': age, 'goal': goal, 'level': level, 'frequency': frequency, 'size_in_cm': size_in_cm, 'weight_in_kg': weight_in_kg}).execute()
         logging.info(f"Task ended for {email}.")
 
     trigger_zap(email, html_body)
