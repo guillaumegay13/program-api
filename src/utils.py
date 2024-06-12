@@ -98,7 +98,7 @@ def generate_html(json_data, goal, include_body_analysis=False):
     """
     return html
 
-def insert_complete_program(program_data, email, input, firebase_service):
+def insert_complete_program(program_data, email, input, firebase_service, profile_data):
 
     days_specified = False
     today = datetime.now().date()
@@ -129,7 +129,7 @@ def insert_complete_program(program_data, email, input, firebase_service):
     # convert date to datetime for Firebase
     program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
     # Insert program
-    program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description)
+    program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description, profile_data)
 
     # Insert weeks
     for week in program['weeks']:

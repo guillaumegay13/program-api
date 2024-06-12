@@ -140,10 +140,28 @@ def background_task(input_data: UserInput):
     else:
         program = generate_program(input)
         html_body = generate_html(program, goal)
-        # Store program
-        insert_complete_program(program, email, input, firebase_service)
+
         # Store user profile
-        firebase_service.insert_profile(email, gender, age, goal, level, frequency, size_in_cm, weight_in_kg)
+        profile_data = {
+            "user_email": email,
+            "gender": gender,
+            "age": age,
+            "goal": goal,
+            "level": level,
+            "frequency": frequency,
+            "height": size_in_cm,
+            "weight": weight_in_kg,
+            "heightUnit": "cm",
+            "weightUnit": "kg",
+            "size_in_cm": size_in_cm,
+            "weight_in_kg": weight_in_kg,
+            "push_notifications": True
+        }
+        firebase_service.insert_profile(profile_data)
+
+        # Store program
+        insert_complete_program(program, email, input, firebase_service, profile_data)
+
         logging.info(f"Task ended for {email}.")
 
     trigger_zap(email, html_body)
