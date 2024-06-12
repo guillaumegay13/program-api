@@ -129,7 +129,7 @@ def insert_complete_program(program_data, email, input, firebase_service):
     # convert date to datetime for Firebase
     program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
     # Insert program
-    firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description)
+    program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description)
 
     # Insert weeks
     for week in program['weeks']:
@@ -147,7 +147,8 @@ def insert_complete_program(program_data, email, input, firebase_service):
                     "description": session['description'],
                     "reference": session['reference_to_method'],
                     "number_of_exercises": len(session['exercises']),
-                    "session_date": datetime.combine(session_date, datetime.min.time())
+                    "session_date": datetime.combine(session_date, datetime.min.time()),
+                    "program_id": program_id
                 }
             else:
                 session_data_to_insert = {
@@ -156,7 +157,8 @@ def insert_complete_program(program_data, email, input, firebase_service):
                     "number": session['sessionNumber'],
                     "description": session['description'],
                     "reference": session['reference_to_method'],
-                    "number_of_exercises": len(session['exercises'])
+                    "number_of_exercises": len(session['exercises']),
+                    "program_id": program_id
                 }
 
             exercises_data = []
