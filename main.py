@@ -239,7 +239,7 @@ def generate_program(input):
     firebase_service.insert_profile(profile_data)
 
     # Store program
-    insert_complete_program(program, email, {**input, **methods, **evidences}, firebase_service, profile_data)
+    insert_complete_program(program, email, {**input, **methods}, firebase_service, profile_data)
     
     return program
 
