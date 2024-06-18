@@ -103,7 +103,7 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
     days_specified = False
     today = datetime.now().date()
 
-    if 'days' in input:
+    if 'days' in input and input['days'] != None:
 
         days_specified = True
 
@@ -128,8 +128,17 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
     program_description = program["programDescription"]
     # convert date to datetime for Firebase
     program_start_datetime = datetime.combine(program_start_date, datetime.min.time())
+
+    evidences = None
+    if "evidences" in input:
+        evidences = input["evidences"]
+
+    methods = None
+    if "methods" in input:
+        methods = input["methods"]
+
     # Insert program
-    program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description, profile_data)
+    program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description, profile_data, evidences, methods)
 
     # Insert weeks
     for week in program['weeks']:
@@ -137,7 +146,7 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
         for session in week['sessions']:
             if days_specified:
                 # days start at 0 while sessionNumner starts at 1
-                session_date = get_session_date(program_start_date, days_of_week[program_start_day], days_of_week[days[session['sessionNumber'] - 1]], week["weekNumber"])
+                session_date = get_session_date(program_start_date, days_of_week[program_start_day.lower()], days_of_week[days[session['sessionNumber'] - 1].lower()], week["weekNumber"])
 
                 # Firebase
                 session_data_to_insert = {

@@ -175,7 +175,7 @@ def trigger_zap(email, html_body):
     else:
         logging.info(f'Error: {response.status_code}')
 
-def provide_evidences(input, api_client):
+def provide_evidences(input : UserInput, api_client):
     provide_evidences_system_prompt = template["provide_evidences"][0]["system_template"]
     provide_evidences_user_prompt = template["provide_evidences"][0]["user_template"].format(**input)
     evidences = api_client.invoke(provide_evidences_system_prompt, provide_evidences_user_prompt)
@@ -209,6 +209,37 @@ def generate_program(input):
 
     # Generate program from the methods
     program = generate_program_from_methods({**input, **methods}, api_client)
+
+    email = input["email"]
+    goal = input["goal"]
+    gender = input['gender']
+    level = input['level']
+    frequency = input['frequency']
+    goal = input['goal']
+    size_in_cm = input['size']
+    weight_in_kg = input['weight']
+    age = input['age']
+
+    # Store user profile
+    profile_data = {
+        "user_email": email,
+        "gender": gender,
+        "age": age,
+        "goal": goal,
+        "level": level,
+        "frequency": frequency,
+        "height": size_in_cm,
+        "weight": weight_in_kg,
+        "height_unit": "cm",
+        "weight_unit": "kg",
+        "size": size_in_cm,
+        "weight": weight_in_kg,
+        "push_notifications": True
+    }
+    firebase_service.insert_profile(profile_data)
+
+    # Store program
+    insert_complete_program(program, email, {**input, **methods, **evidences}, firebase_service, profile_data)
     
     return program
 
