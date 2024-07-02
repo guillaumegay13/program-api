@@ -137,6 +137,8 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
     if "methods" in input:
         methods = input["methods"]
 
+    frequency = input["frequency"]
+
     # Insert program
     program_id = firebase_service.insert_program(email, program_data, program_start_datetime, program_name, program_description, profile_data, evidences, methods)
 
@@ -160,6 +162,12 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
                     "program_id": program_id
                 }
             else:
+
+                days_between_sessions = 7 // frequency
+                session_number = session['sessionNumber']
+                week_number = week['weekNumber']
+                session_date = program_start_date + timedelta(days=(week_number - 1) * 7 + (session_number - 1) * days_between_sessions)
+
                 session_data_to_insert = {
                     "user_email": email,
                     "name": session["sessionName"],
@@ -167,6 +175,7 @@ def insert_complete_program(program_data, email, input, firebase_service, profil
                     "description": session['description'],
                     "reference": session['reference_to_method'],
                     "number_of_exercises": len(session['exercises']),
+                    "session_date": datetime.combine(session_date, datetime.min.time()),
                     "program_id": program_id
                 }
 

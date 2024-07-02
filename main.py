@@ -201,6 +201,18 @@ def generate_program_from_methods(input, api_client):
 def generate_program(input):
     api_client = OPENAI_API_CLIENT
 
+    height_unit = 'cm'
+    if 'height_unit' in input:
+        height_unit = input['height_unit']
+    else:
+        input['height_unit'] = height_unit
+
+    weight_unit = 'cm'
+    if 'weight_unit' in input:
+        weight_unit = input['weight_unit']
+    else:
+        input['weight_unit'] = weight_unit
+
     # Provide evidences
     evidences = provide_evidences(input, api_client)
 
@@ -216,8 +228,8 @@ def generate_program(input):
     level = input['level']
     frequency = input['frequency']
     goal = input['goal']
-    size_in_cm = input['size']
-    weight_in_kg = input['weight']
+    height = input['size']
+    weight = input['weight']
     age = input['age']
 
     # Store user profile
@@ -228,18 +240,24 @@ def generate_program(input):
         "goal": goal,
         "level": level,
         "frequency": frequency,
-        "height": size_in_cm,
-        "weight": weight_in_kg,
-        "height_unit": "cm",
-        "weight_unit": "kg",
-        "size": size_in_cm,
-        "weight": weight_in_kg,
+        "height": height,
+        "weight": weight,
+        "height_unit": height_unit,
+        "weight_unit": weight_unit,
+        "size": height,
         "push_notifications": True
     }
+
+    if 'firstname' in input:
+        profile_data['firstname'] = input['firstname']
+
+    if 'name' in input:
+        profile_data['name'] = input['name']
+
     firebase_service.insert_profile(profile_data)
 
     # Store program
-    insert_complete_program(program, email, {**input, **methods}, firebase_service, profile_data)
+    insert_complete_program(program, email, {**input, **methods, **evidences}, firebase_service, profile_data)
     
     return program
 
